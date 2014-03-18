@@ -91,9 +91,10 @@ import javax.net.ssl.SSLSocket;
  *     }
  *  });
  * </pre>
- * Applications must ensure to unregister {@link SSLSocket} or {@link SSLEngine} instances,
+ * Applications must ensure to deregister {@link SSLSocket} or {@link SSLEngine} instances,
  * because they are kept in a global map.
- * Unregistration should typically happen when the associated socket connection is closed.
+ * Deregistration should typically happen when the application detects the end of the protocol
+ * negotiation, and/or when the associated socket connection is closed.
  * <p/>
  * In order to help application development, you can set the {@link ALPN#debug} field
  * to {@code true} to have debug code printed to {@link System#err}.
