@@ -18,11 +18,12 @@
 
 package org.eclipse.jetty.alpn;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSocket;
 
 /**
@@ -47,15 +48,9 @@ import javax.net.ssl.SSLSocket;
  * <p/>
  * Client side typical usage:
  * <pre>
- * SSLSocket sslSocket = ...;
+ * final SSLSocket sslSocket = ...;
  * ALPN.put(sslSocket, new ALPN.ClientProvider()
  * {
- *     &#64;Override
- *     public boolean supports()
- *     {
- *         return true;
- *     }
- *
  *     &#64;Override
  *     public List&lt;String&gt; protocols()
  *     {
@@ -65,28 +60,32 @@ import javax.net.ssl.SSLSocket;
  *     &#64;Override
  *     public void unsupported()
  *     {
+ *         ALPN.remove(sslSocket);
  *     }
  *
  *     &#64;Override
  *     public void selected(String protocol)
  *     {
  *         System.out.println("Selected protocol: " + protocol);
+ *         ALPN.remove(sslSocket);
  *     }
  *  });
  * </pre>
  * Server side typical usage:
  * <pre>
- * SSLSocket sslSocket = ...;
+ * final SSLSocket sslSocket = ...;
  * ALPN.put(sslSocket, new ALPN.ServerProvider()
  * {
  *     &#64;Override
  *     public void unsupported()
  *     {
+ *         ALPN.remove(sslSocket);
  *     }
  *
  *     &#64;Override
  *     public String select(List&lt;String&gt; protocols)
  *     {
+ *         ALPN.remove(sslSocket);
  *         return protocols.get(0);
  *     }
  *  });
@@ -106,7 +105,7 @@ public class ALPN
      */
     public static boolean debug = false;
 
-    private static Map<Object, Provider> objects = Collections.synchronizedMap(new HashMap<Object, Provider>());
+    private static Map<Object, Provider> objects = new ConcurrentHashMap<Object, Provider>();
 
     private ALPN()
     {
@@ -192,14 +191,6 @@ public class ALPN
     public interface ClientProvider extends Provider
     {
         /**
-         * Callback invoked to let the implementation know whether an
-         * ALPN extension should be added to a ClientHello TLS message.
-         *
-         * @return true to add the ALPN extension, false otherwise
-         */
-        public boolean supports();
-
-        /**
          * Callback invoked to let the implementation know the list
          * of protocols that should be added to the ALPN extension in
          * a ClientHello TLS message.
@@ -208,7 +199,7 @@ public class ALPN
          * returned true.
          *
          * @return the list of protocols supported by the client;
-         * if null or empty, the ALPN extension is not sent
+         * if {@code null} or empty, the ALPN extension is not sent
          */
         public List<String> protocols();
 
@@ -222,7 +213,10 @@ public class ALPN
          * Callback invoked to let the client application know
          * the protocol chosen by the server.
          *
-         * @param protocol the protocol selected by the server
+         * @param protocol the protocol selected by the server.
+         * @throws Throwable This may be thrown if the selected protocol
+         * is not acceptable and the desired behavior is to fail the handshake
+         * with an alert type of {@code no_application_protocol(120)}.
          */
         public void selected(String protocol);
     }
@@ -244,8 +238,14 @@ public class ALPN
          * a protocol among the ones sent by the client.
          *
          * @param protocols the protocols sent by the client
-         * @return the protocol selected by the server application;
-         * must not be null
+         * @return the protocol selected by the server application.
+         * A {@code null} value will indicate the server will not
+         * include the {@code ALPN extension} message in the {@code ServerHello}
+         * message.  This means the server appears as though it doesn't support
+         * ALPN and lets the client decide how to handle the situation.
+         * @throws Throwable This may be thrown if no matching protocols
+         * are detected and the desired behavior is to fail the handshake
+         * with an alert type of {@code no_application_protocol(120)}.
          */
         public String select(List<String> protocols);
     }
