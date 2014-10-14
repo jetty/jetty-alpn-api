@@ -21,32 +21,26 @@ package org.eclipse.jetty.alpn;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSocket;
 
 /**
- * {@link ALPN} provides an API to applications that want to make use of the
- * <a href="http://tools.ietf.org/html/draft-ietf-tls-applayerprotoneg">Application Layer Protocol Negotiation</a>.
- * <p/>
- * The ALPN extension is only available when using the TLS protocol, therefore applications must
- * ensure that the TLS protocol is used:
+ * <p>{@link ALPN} provides an API to applications that want to make use of the
+ * <a href="http://tools.ietf.org/html/rfc7301">Application Layer Protocol Negotiation</a>.</p>
+ * <p>The ALPN extension is only available when using the TLS protocol, therefore applications must
+ * ensure that the TLS protocol is used:</p>
  * <pre>
  * SSLContext context = SSLContext.getInstance("TLSv1");
  * </pre>
- * Refer to the
+ * <p>Refer to the
  * <a href="http://docs.oracle.com/javase/7/docs/technotes/guides/security/StandardNames.html#SSLContext">list
- * of standard SSLContext protocol names</a> for further information on TLS protocol versions supported.
- * <p/>
- * Applications must register instances of either {@link SSLSocket} or {@link SSLEngine} with a
+ * of standard SSLContext protocol names</a> for further information on TLS protocol versions supported.</p>
+ * <p>Applications must register instances of either {@link SSLSocket} or {@link SSLEngine} with a
  * {@link ClientProvider} or with a {@link ServerProvider}, depending whether they are on client or
- * server side.
- * <p/>
- * The ALPN implementation will invoke the provider callbacks to allow applications to interact
- * with the negotiation of the protocol.
- * <p/>
- * Client side typical usage:
+ * server side.</p>
+ * <p>The ALPN implementation will invoke the provider callbacks to allow applications to interact
+ * with the negotiation of the protocol.</p>
+ * <p>Client side typical usage:</p>
  * <pre>
  * final SSLSocket sslSocket = ...;
  * ALPN.put(sslSocket, new ALPN.ClientProvider()
@@ -71,7 +65,7 @@ import javax.net.ssl.SSLSocket;
  *     }
  *  });
  * </pre>
- * Server side typical usage:
+ * <p>Server side typical usage:</p>
  * <pre>
  * final SSLSocket sslSocket = ...;
  * ALPN.put(sslSocket, new ALPN.ServerProvider()
@@ -90,13 +84,12 @@ import javax.net.ssl.SSLSocket;
  *     }
  *  });
  * </pre>
- * Applications must ensure to deregister {@link SSLSocket} or {@link SSLEngine} instances,
- * because they are kept in a global map.
+ * <p>Applications must ensure to deregister {@link SSLSocket} or {@link SSLEngine} instances,
+ * because they are kept in a JVM global map.
  * Deregistration should typically happen when the application detects the end of the protocol
- * negotiation, and/or when the associated socket connection is closed.
- * <p/>
- * In order to help application development, you can set the {@link ALPN#debug} field
- * to {@code true} to have debug code printed to {@link System#err}.
+ * negotiation, and/or when the associated socket connection is closed.</p>
+ * <p>In order to help application development, you can set the {@link ALPN#debug} field
+ * to {@code true} to have debug code printed to {@link System#err}.</p>
  */
 public class ALPN
 {
@@ -105,7 +98,7 @@ public class ALPN
      */
     public static boolean debug = false;
 
-    private static Map<Object, Provider> objects = new ConcurrentHashMap<Object, Provider>();
+    private static Map<Object, Provider> objects = new ConcurrentHashMap<>();
 
     private ALPN()
     {
@@ -191,12 +184,9 @@ public class ALPN
     public interface ClientProvider extends Provider
     {
         /**
-         * Callback invoked to let the implementation know the list
+         * <p>Callback invoked to let the implementation know the list
          * of protocols that should be added to the ALPN extension in
-         * a ClientHello TLS message.
-         * <p/>
-         * This callback is invoked only if the {@link #supports()}
-         * returned true.
+         * a ClientHello TLS message.</p>
          *
          * @return the list of protocols supported by the client;
          * if {@code null} or empty, the ALPN extension is not sent
@@ -210,13 +200,14 @@ public class ALPN
         public void unsupported();
 
         /**
-         * Callback invoked to let the client application know
-         * the protocol chosen by the server.
+         * <p>Callback invoked to let the client application know
+         * the protocol chosen by the server.</p>
+         * <p>The implementation may throw an exception to indicate
+         * that the protocol selected by the server is not acceptable,
+         * causing the connection to be closed with a TLS alert of
+         * type {@code no_application_protocol(120)}.</p>
          *
          * @param protocol the protocol selected by the server.
-         * @throws Throwable This may be thrown if the selected protocol
-         * is not acceptable and the desired behavior is to fail the handshake
-         * with an alert type of {@code no_application_protocol(120)}.
          */
         public void selected(String protocol);
     }
@@ -234,18 +225,19 @@ public class ALPN
         public void unsupported();
 
         /**
-         * Callback invoked to let the server application select
-         * a protocol among the ones sent by the client.
+         * <p>Callback invoked to let the server application select
+         * a protocol among the ones sent by the client.</p>
+         * <p>The implementation may throw an exception to indicate
+         * that the protocol negotiation is not possible,
+         * causing the connection to be closed with a TLS alert of
+         * type {@code no_application_protocol(120)}.</p>
          *
          * @param protocols the protocols sent by the client
          * @return the protocol selected by the server application.
          * A {@code null} value will indicate the server will not
          * include the {@code ALPN extension} message in the {@code ServerHello}
-         * message.  This means the server appears as though it doesn't support
+         * message. This means the server appears as though it doesn't support
          * ALPN and lets the client decide how to handle the situation.
-         * @throws Throwable This may be thrown if no matching protocols
-         * are detected and the desired behavior is to fail the handshake
-         * with an alert type of {@code no_application_protocol(120)}.
          */
         public String select(List<String> protocols);
     }
