@@ -22,6 +22,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <bundle-name>${project.artifactId}</bundle-name>
     <bundle-symbolic-name>org.eclipse.jetty.alpn.api</bundle-symbolic-name>
     <bundle-doc-url>http://www.eclipse.org/jetty/documentation/current/alpn-chapter.html</bundle-doc-url>
   </properties>
@@ -94,15 +95,14 @@
                 <Bundle-RequiredExecutionEnvironment>J2SE-1.7</Bundle-RequiredExecutionEnvironment>
                 <Bundle-DocURL>${bundle-doc-url}</Bundle-DocURL>
                 <Bundle-Vendor>Eclipse Jetty Project</Bundle-Vendor>
+                <Bundle-Name>${bundle-name}</Bundle-Name>
                 <Bundle-SymbolicName>${bundle-symbolic-name}</Bundle-SymbolicName>
-                <Bundle-Copyright>Copyright (c) 2008-2014 Mort Bay
-                  Consulting Pty. Ltd.</Bundle-Copyright>
+                <Bundle-Copyright>Copyright (c) 2008-2015 Mort Bay Consulting Pty. Ltd.</Bundle-Copyright>
                 <Export-Package>
                   org.eclipse.jetty.alpn.*;version="${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}"
                 </Export-Package>
                 <Import-Package>*</Import-Package>
-                <Bundle-Description>Application Layer Protocol
-                  Negotiation API.</Bundle-Description>
+                <Bundle-Description>Application Layer Protocol Negotiation API</Bundle-Description>
               </instructions>
             </configuration>
           </execution>
