@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSocket;
 
 /**
@@ -59,7 +60,7 @@ import javax.net.ssl.SSLSocket;
  *     }
  *
  *     &#64;Override
- *     public void selected(String protocol)
+ *     public void selected(String protocol) throws SSLException
  *     {
  *         System.out.println("Selected protocol: " + protocol);
  *         ALPN.remove(sslSocket);
@@ -78,7 +79,7 @@ import javax.net.ssl.SSLSocket;
  *     }
  *
  *     &#64;Override
- *     public String select(List&lt;String&gt; protocols)
+ *     public String select(List&lt;String&gt; protocols) throws SSLException
  *     {
  *         ALPN.remove(sslSocket);
  *         return protocols.get(0);
@@ -209,8 +210,9 @@ public class ALPN
          * type {@code no_application_protocol(120)}.</p>
          *
          * @param protocol the protocol selected by the server.
+         * @throws SSLException if the protocol negotiation failed.
          */
-        public void selected(String protocol);
+        public void selected(String protocol) throws SSLException;
     }
 
     /**
@@ -233,13 +235,14 @@ public class ALPN
          * causing the connection to be closed with a TLS alert of
          * type {@code no_application_protocol(120)}.</p>
          *
-         * @param protocols the protocols sent by the client
+         * @param protocols the protocols sent by the client.
          * @return the protocol selected by the server application.
          * A {@code null} value will indicate the server will not
          * include the {@code ALPN extension} message in the {@code ServerHello}
          * message. This means the server appears as though it doesn't support
          * ALPN and lets the client decide how to handle the situation.
+         * @throws SSLException if the protocol negotiation failed.
          */
-        public String select(List<String> protocols);
+        public String select(List<String> protocols) throws SSLException;
     }
 }
